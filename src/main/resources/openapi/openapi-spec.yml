@@ -19,7 +19,7 @@ info:
     url: 'https://opensource.org/licenses/MIT'
 
 security:
-  - oAuthJwt: []
+  - bearerAuth: []
 
 tags:
   - name: defendants
@@ -73,15 +73,34 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DefendantDetails"
-              example:
-                - defendantId: "30b83084-d2fe-4a70-bbd1-fae1dfdb4b95"
-                  masterDefendantId: "a1f2e3d4-c5b6-4789-9abc-1d2e3f4a5b6c"
-                  name: "John Doe"
-                  dateOfBirth: "1980-01-31"
-                - defendantId: "7c9e6f3a-2b4d-4e8f-9a1c-5d3b8f7e2c6a"
-                  masterDefendantId: "7c9e6f3a-2b4d-4e8f-9a1c-5d3b8f7e2c6a"
-                  name: "Jane Smith"
-                  dateOfBirth: "1992-06-15"
+              examples:
+                allDefendants:
+                  summary: Every defendant on the case
+                  value:
+                    - defendantId: "30b83084-d2fe-4a70-bbd1-fae1dfdb4b95"
+                      masterDefendantId: "a1f2e3d4-c5b6-4789-9abc-1d2e3f4a5b6c"
+                      name: "John Doe"
+                      dateOfBirth: "1980-01-31"
+                    - defendantId: "7c9e6f3a-2b4d-4e8f-9a1c-5d3b8f7e2c6a"
+                      masterDefendantId: "7c9e6f3a-2b4d-4e8f-9a1c-5d3b8f7e2c6a"
+                      name: "Jane Smith"
+                      dateOfBirth: "1992-06-15"
+                byDefendantId:
+                  summary: Narrowed to one defendant with defendantId
+                  value:
+                    - defendantId: "30b83084-d2fe-4a70-bbd1-fae1dfdb4b95"
+                      masterDefendantId: "a1f2e3d4-c5b6-4789-9abc-1d2e3f4a5b6c"
+                      name: "John Doe"
+                      dateOfBirth: "1980-01-31"
+                byMasterDefendantId:
+                  summary: Resolved with masterDefendantId, date of birth not known
+                  value:
+                    - defendantId: "7c9e6f3a-2b4d-4e8f-9a1c-5d3b8f7e2c6a"
+                      masterDefendantId: "7c9e6f3a-2b4d-4e8f-9a1c-5d3b8f7e2c6a"
+                      name: "Jane Smith"
+                noMatch:
+                  summary: No defendants match
+                  value: []
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':
@@ -95,16 +114,13 @@ paths:
 
 components:
   securitySchemes:
-    oAuthJwt:
-      type: oauth2
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
       description: >-
-        OAuth 2.0 protection. Callers must present a valid JWT bearer access
-        token obtained via the client credentials flow.
-      flows:
-        clientCredentials:
-          tokenUrl: https://api-cp-crime-defendant-details.net/oauth2/token
-          scopes:
-            defendant.read: Read access to defendant details data
+        An app-only Microsoft Entra v2 access token from the client credentials
+        flow, carrying the app.read role.
 
   responses:
     BadRequest:
@@ -132,14 +148,14 @@ components:
             timestamp: "2026-07-06T11:33:22.794Z"
             traceId: "c3a2b4d5e6f70819"
     Forbidden:
-      description: The access token does not grant the required scope
+      description: The access token does not carry the required app.read role
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
           example:
             error: "FORBIDDEN"
-            message: "The access token does not grant the required scope defendant.read"
+            message: "The access token does not carry the required role app.read"
             timestamp: "2026-07-06T11:33:22.794Z"
             traceId: "d4b3c5e6f708192a"
     NotFound:
