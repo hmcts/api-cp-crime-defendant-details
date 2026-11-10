@@ -65,6 +65,9 @@ jobs:
       - name: Build deployment matrix from tfvars files
         id: matrix
         shell: bash
+        env:
+          # prod is applied by terraform-release.yaml when a release is published, not here.
+          SKIP_ENVS: "prod"
         run: |
           set -euo pipefail
 
@@ -80,11 +83,11 @@ jobs:
             env_name="${env_name#infrastructure/}"
             env_upper="$(echo "$env_name" | tr '[:lower:]-' '[:upper:]_')"
 
-            if [ "$env_name" = "prod" ]; then
-              storage_var="TFSTATE_STORAGE_ACCOUNT_PROD"
-            else
-              storage_var="TFSTATE_STORAGE_ACCOUNT_NONPROD"
+            if [[ " $SKIP_ENVS " == *" $env_name "* ]]; then
+              continue
             fi
+
+            storage_var="TFSTATE_STORAGE_ACCOUNT_NONPROD"
 
             item="$(jq -nc \
               --arg environment "$env_name" \
